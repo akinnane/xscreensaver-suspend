@@ -7,6 +7,13 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+/// How long is .no_suspend valid for
+const NO_SUSPEND: u64 = 8 * 60 * 60;
+/// How many multiples of password_time before suspending again
+static PASSWORD_TIMEOUT: u32 = 3;
+/// How long to wait for xscreensaver events
+static SLEEP: u64 = 5;
+
 fn main() -> ! {
     let settings = XscreensaverSettings::load();
     if !settings.dpms_enabled {
@@ -18,9 +25,9 @@ fn main() -> ! {
 
     let mut timer = None;
     let mut locked = None;
-    let password_timeout = settings.password_timeout * 3;
+    let password_timeout = settings.password_timeout * PASSWORD_TIMEOUT;
     loop {
-        if let Ok(status) = rx.recv_timeout(Duration::from_secs(5)) {
+        if let Ok(status) = rx.recv_timeout(Duration::from_secs(SLEEP)) {
             match status {
                 _ if status.contains("LOCK") => timer = Some(std::time::Instant::now()),
                 // Maybe other events should be processed?
@@ -74,7 +81,7 @@ fn inhibit_suspend() -> bool {
         std::env::var("HOME").expect("Get HOME environment variable")
     );
     let no_suspend_lifetime = SystemTime::now()
-        .checked_sub(Duration::from_secs((8 * 60 * 60) as u64))
+        .checked_sub(Duration::from_secs(NO_SUSPEND))
         .expect("Time subtraction");
 
     metadata(filename)
