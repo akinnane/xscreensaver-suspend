@@ -155,7 +155,8 @@ impl XscreensaverSettings {
                 s.rsplit(':')
                     .enumerate()
                     .map(|(i, n)| {
-                        n.trim().parse::<u64>().expect("Parse time as u64") * (60 * i as u64)
+                        let unit = [1, 60, 60 * 60][i];
+                        n.trim().parse::<u64>().expect("Parse time as u64") * unit
                     })
                     .sum()
             })
